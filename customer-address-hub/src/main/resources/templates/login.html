@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>고객 정보 입력</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="center-wrapper">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-icon">🎁</div>
+                <h1>선물세트 주문</h1>
+                <p>고객 정보를 입력해주세요</p>
+            </div>
+
+            <form th:action="@{/customer/verify}" method="post" th:object="${customerForm}" id="customerForm">
+                <div class="form-group">
+                    <label for="name">이름 <span class="required">*</span></label>
+                    <input type="text" id="name" th:field="*{name}" required
+                           placeholder="이름을 입력하세요"
+                           autocomplete="name">
+                    <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">휴대폰 번호 <span class="required">*</span></label>
+                    <input type="tel" id="phone" th:field="*{phone}" required
+                           placeholder="010-1234-5678"
+                           pattern="[0-9]{3}-[0-9]{4}-[0-9]{4}"
+                           autocomplete="tel">
+                    <div class="error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-full" id="submitBtn">
+                        <span class="btn-text">다음 단계</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="login-footer">
+                <p>
+                    <span class="footer-icon">🔒</span>
+                    개인정보는 안전하게 보호됩니다
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('customerForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const nameInput = document.getElementById('name');
+        const phoneInput = document.getElementById('phone');
+
+        // 실시간 입력 검증
+        function validateForm() {
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            const phonePattern = /^[0-9]{3}-[0-9]{4}-[0-9]{4}$/;
+
+            const isValid = name.length >= 2 && phonePattern.test(phone);
+
+            submitBtn.disabled = !isValid;
+
+            if (isValid) {
+                submitBtn.classList.add('btn-ready');
+            } else {
+                submitBtn.classList.remove('btn-ready');
+            }
+        }
+
+        // 전화번호 자동 하이픈 추가
+        function formatPhoneNumber(value) {
+            const numbers = value.replace(/[^0-9]/g, '');
+            if (numbers.length <= 3) {
+                return numbers;
+            } else if (numbers.length <= 7) {
+                return numbers.replace(/(\d{3})(\d{1,4})/, '$1-$2');
+            } else {
+                return numbers.replace(/(\d{3})(\d{4})(\d{1,4})/, '$1-$2-$3');
+            }
+        }
+
+        // 이벤트 리스너 등록
+        nameInput.addEventListener('input', validateForm);
+        phoneInput.addEventListener('input', function(e) {
+            const formatted = formatPhoneNumber(e.target.value);
+            if (formatted.length <= 13) { // 010-1234-5678 최대 길이
+                e.target.value = formatted;
+            }
+            validateForm();
+        });
+
+        // 폼 제출 시 로딩 상태 표시
+        form.addEventListener('submit', function(e) {
+            submitBtn.classList.add('btn-loading');
+            submitBtn.disabled = true;
+
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnIcon = submitBtn.querySelector('.btn-icon');
+
+            btnText.textContent = '처리 중...';
+            btnIcon.textContent = '⏳';
+        });
+
+        // 초기 검증
+        validateForm();
+
+        // 이름 입력 시 포커스 효과
+        nameInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('form-group-focused');
+        });
+
+        nameInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('form-group-focused');
+        });
+
+        phoneInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('form-group-focused');
+        });
+
+        phoneInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('form-group-focused');
+        });
+    });
+</script>
+</body>
+</html>

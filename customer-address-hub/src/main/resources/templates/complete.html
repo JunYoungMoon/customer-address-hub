@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>주문 완료</title>
+</head>
+<body>
+<div layout:fragment="content" style="background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); min-height: calc(100vh - 80px); display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div class="complete-container">
+        <div class="success-icon">🎉</div>
+
+        <h1 class="success-title">주문이 완료되었습니다!</h1>
+        <p class="success-subtitle">
+            선물세트 주문이 성공적으로 접수되었습니다.<br>
+            소중한 분께 전해질 선물을 정성껏 준비하겠습니다.
+        </p>
+
+        <!-- 주문번호 -->
+        <div class="order-number">
+            <div class="order-number-label">주문번호</div>
+            <div class="order-number-value" th:text="${order.orderNumber}">ORD-20250717-001</div>
+        </div>
+
+        <!-- 주문 정보 -->
+        <div class="order-info">
+            <div class="info-title">📋 주문 정보</div>
+
+            <div class="info-row">
+                <span class="info-label">주문일시</span>
+                <span class="info-value" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd HH:mm')}">
+                    2025-07-17 14:30
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">주문자</span>
+                <span class="info-value" th:text="${customer.name}">홍길동</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">받는 분</span>
+                <span class="info-value" th:text="${order.recipientName}">김철수</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">연락처</span>
+                <span class="info-value" th:text="${order.recipientPhone}">010-9876-5432</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">배송지</span>
+                <span class="info-value">
+                    <div th:text="${order.address}">서울시 강남구 테헤란로 123</div>
+                    <div th:text="${order.detailAddress}">삼성빌딩 10층</div>
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">주문 상품</span>
+                <span class="info-value">
+                    <div th:if="${order.galbiQuantity > 0}">
+                        갈비 선물세트 × <span th:text="${order.galbiQuantity}">1</span>
+                    </div>
+                    <div th:if="${order.spamQuantity > 0}">
+                        스팸 선물세트 × <span th:text="${order.spamQuantity}">1</span>
+                    </div>
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">총 상품 수량</span>
+                <span class="info-value" th:text="${order.galbiQuantity + order.spamQuantity}">2</span>개
+            </div>
+        </div>
+
+        <!-- 배송 안내 -->
+        <div class="delivery-info">
+            <strong>🚚 배송 안내</strong><br>
+            영업일 기준 2-3일 내 배송 예정입니다.<br>
+            배송 현황은 주문번호로 확인하실 수 있습니다.
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="location.href='/order/status?orderNumber=' + /*[[${order.orderNumber}]]*/ 'ORD-20250717-001'">
+                배송 현황 확인
+            </button>
+
+            <button class="btn btn-secondary" onclick="location.href='/products'">
+                계속 쇼핑하기
+            </button>
+        </div>
+
+        <!-- 고객센터 안내 -->
+        <div class="customer-service">
+            문의사항이 있으시면 고객센터로 연락해주세요.<br>
+            <strong>📞 1588-1234</strong> (평일 9:00-18:00)
+        </div>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            document.querySelector('.success-icon').style.transform = 'scale(1.1)';
+            setTimeout(function() {
+                document.querySelector('.success-icon').style.transform = 'scale(1)';
+            }, 200);
+        }, 500);
+    });
+
+    document.querySelector('.order-number-value').addEventListener('click', function() {
+        const orderNumber = this.textContent;
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(orderNumber).then(function() {
+                alert('주문번호가 복사되었습니다: ' + orderNumber);
+            });
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = orderNumber;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('주문번호가 복사되었습니다: ' + orderNumber);
+        }
+    });
+</script>
+</body>
+</html>

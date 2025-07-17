@@ -1,0 +1,40 @@
+server:
+  port: 19093
+  servlet:
+    session:
+      timeout: 3600s # 1시간
+      cookie:
+        name: JSESSIONID
+        http-only: true
+        secure: false # 개발환경에서는 false, 운영환경에서는 true
+        same-site: lax
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        # camelCase 그대로 사용하도록 설정
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true  # SQL 로그 확인용 (개발 시에만)
+    properties:
+      hibernate:
+        format_sql: true
+
+  datasource:
+    url: ${DB_HOST}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_NAME}
+    password: ${DB_PASSWORD}
+
+  thymeleaf:
+    cache: false
+    suffix: .html
+    prefix: classpath:/templates/
+    encoding: UTF-8
+
+  web:
+    resources:
+      static-locations: classpath:/static/

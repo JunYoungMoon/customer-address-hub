@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>선물세트 선택</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- 토스트 메시지 -->
+    <div id="toast" class="toast">
+        <span class="toast-icon">✓</span>
+        <span class="toast-message"></span>
+    </div>
+
+    <div class="customer-info">
+        <span th:text="${customer.name}">홍길동</span>님 환영합니다!
+        (<span th:text="${customer.phone}">010-1234-5678</span>)
+    </div>
+
+    <div class="content">
+        <div class="products">
+            <!-- 갈비 선물세트 -->
+            <div class="product-card">
+                <img src="/images/product1.jpg" alt="갈비 선물세트" class="product-image"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="product-image-placeholder" style="display:none;">🥩</div>
+
+                <div class="product-info">
+                    <div class="product-name">프리미엄 갈비 선물세트</div>
+                    <div class="product-description">최고급 한우 갈비로 만든 프리미엄 선물세트입니다. 명절과 특별한 날 선물로 완벽합니다.</div>
+
+                    <!-- 이미 장바구니에 담긴 수량 표시 -->
+                    <div class="cart-status" id="galbi-cart-status" style="display:none;">
+                        🛒 장바구니에 <span id="galbi-cart-count">0</span>개 담김
+                    </div>
+
+                    <div class="quantity-controls">
+                        <span class="quantity-label">수량 선택</span>
+                        <div class="quantity-selector">
+                            <button type="button" class="quantity-btn" onclick="decreaseQuantity('galbi')">-</button>
+                            <span class="quantity-display" id="galbi-quantity">0</span>
+                            <button type="button" class="quantity-btn" onclick="increaseQuantity('galbi')">+</button>
+                        </div>
+                    </div>
+
+                    <button class="add-to-cart" onclick="addToCart('galbi')" id="galbi-add-btn" disabled>
+                        <span class="original-text">장바구니에 추가</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 스팸 선물세트 -->
+            <div class="product-card">
+                <img src="/images/product2.jpg" alt="스팸 선물세트" class="product-image"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="product-image-placeholder" style="display:none;">🥫</div>
+
+                <div class="product-info">
+                    <div class="product-name">프리미엄 스팸 선물세트</div>
+                    <div class="product-description">정성스럽게 선별한 프리미엄 스팸 선물세트입니다. 실용적이고 맛있는 선물입니다.</div>
+
+                    <!-- 이미 장바구니에 담긴 수량 표시 -->
+                    <div class="cart-status" id="spam-cart-status" style="display:none;">
+                        🛒 장바구니에 <span id="spam-cart-count">0</span>개 담김
+                    </div>
+
+                    <div class="quantity-controls">
+                        <span class="quantity-label">수량 선택</span>
+                        <div class="quantity-selector">
+                            <button type="button" class="quantity-btn" onclick="decreaseQuantity('spam')">-</button>
+                            <span class="quantity-display" id="spam-quantity">0</span>
+                            <button type="button" class="quantity-btn" onclick="increaseQuantity('spam')">+</button>
+                        </div>
+                    </div>
+
+                    <button class="add-to-cart" onclick="addToCart('spam')" id="spam-add-btn" disabled>
+                        <span class="original-text">장바구니에 추가</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cart-footer">
+        <div class="cart-info">
+            장바구니: <span id="cart-count">0</span>개 상품
+        </div>
+        <button class="go-cart-btn" onclick="location.href='/cart'" id="cart-btn" disabled>
+            장바구니 보기
+        </button>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+    let cart = { galbi: 0, spam: 0 };
+    let quantities = { galbi: 0, spam: 0 };
+
+    // 페이지 로드 시 서버와 동기화
+    window.addEventListener('DOMContentLoaded', function() {
+        syncCartWithServer();
+    });
+
+    function syncCartWithServer() {
+        console.log("=== 서버와 장바구니 동기화 ===");
+
+        fetch('/api/cart/status')
+            .then(response => {
+                if (response.status === 401) {
+                    // 인증 오류 시 로그인 페이지로 리다이렉트
+                    location.href = '/login';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data) {
+                    console.log("서버에서 받은 장바구니 데이터:", data);
+
+                    cart.galbi = data.galbiQuantity || 0;
+                    cart.spam = data.spamQuantity || 0;
+
+                    console.log("동기화된 cart:", cart);
+
+                    updateCartDisplay();
+                    updateCartStatusDisplay();
+                    updateQuantityDisplay('galbi');
+                    updateQuantityDisplay('spam');
+                }
+            })
+            .catch(error => {
+                console.error("장바구니 동기화 실패:", error);
+                // 폴백: 서버 사이드 렌더링 값 사용
+                cart.galbi = /*[[${cart.galbiQuantity}]]*/ 0;
+                cart.spam = /*[[${cart.spamQuantity}]]*/ 0;
+
+                updateCartDisplay();
+                updateQuantityDisplay('galbi');
+                updateQuantityDisplay('spam');
+            });
+    }
+
+    function updateCartStatusDisplay() {
+        // 갈비 장바구니 상태
+        const galbiStatus = document.getElementById('galbi-cart-status');
+        const galbiCount = document.getElementById('galbi-cart-count');
+
+        if (cart.galbi > 0) {
+            galbiCount.textContent = cart.galbi;
+            galbiStatus.style.display = 'block';
+        } else {
+            galbiStatus.style.display = 'none';
+        }
+
+        // 스팸 장바구니 상태
+        const spamStatus = document.getElementById('spam-cart-status');
+        const spamCount = document.getElementById('spam-cart-count');
+
+        if (cart.spam > 0) {
+            spamCount.textContent = cart.spam;
+            spamStatus.style.display = 'block';
+        } else {
+            spamStatus.style.display = 'none';
+        }
+    }
+
+    function increaseQuantity(product) {
+        if (quantities[product] < 20) {
+            quantities[product]++;
+            updateQuantityDisplay(product);
+        }
+    }
+
+    function decreaseQuantity(product) {
+        if (quantities[product] > 0) {
+            quantities[product]--;
+            updateQuantityDisplay(product);
+        }
+    }
+
+    function updateQuantityDisplay(product) {
+        document.getElementById(product + '-quantity').textContent = quantities[product];
+        document.getElementById(product + '-add-btn').disabled = quantities[product] === 0;
+    }
+
+    function updateCartDisplay() {
+        const totalItems = cart.galbi + cart.spam;
+        const cartCountElement = document.getElementById('cart-count');
+        const cartBtnElement = document.getElementById('cart-btn');
+
+        if (cartCountElement) {
+            cartCountElement.textContent = totalItems;
+            cartCountElement.classList.add('cart-count-animation');
+            setTimeout(() => {
+                cartCountElement.classList.remove('cart-count-animation');
+            }, 500);
+        }
+
+        if (cartBtnElement) {
+            cartBtnElement.disabled = totalItems === 0;
+        }
+    }
+
+    function addToCart(product) {
+        console.log("=== addToCart 함수 실행 ===");
+        console.log("상품:", product);
+        console.log("추가할 수량:", quantities[product]);
+
+        if (quantities[product] > 0) {
+            const button = document.getElementById(product + '-add-btn');
+            const originalText = button.querySelector('.original-text');
+            const qtyToAdd = quantities[product];
+
+            // 로딩 상태 표시
+            button.classList.add('btn-loading');
+            button.disabled = true;
+            originalText.textContent = '추가 중...';
+
+            // REST API 호출
+            const formData = new FormData();
+            formData.append('galbiQuantity', product === 'galbi' ? qtyToAdd : 0);
+            formData.append('spamQuantity', product === 'spam' ? qtyToAdd : 0);
+            formData.append('action', 'add');
+
+            fetch('/api/cart/modify', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.status === 401) {
+                        // 인증 오류 시 로그인 페이지로 리다이렉트
+                        location.href = '/login';
+                        return;
+                    }
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        // 성공하면 로컬 상태 업데이트
+                        cart[product] += qtyToAdd;
+                        quantities[product] = 0;
+
+                        updateQuantityDisplay(product);
+                        updateCartDisplay();
+                        updateCartStatusDisplay();
+
+                        // 성공 토스트 메시지 표시
+                        const productName = product === 'galbi' ? '갈비 선물세트' : '스팸 선물세트';
+                        showToast(`${productName} ${qtyToAdd}개가 장바구니에 추가되었습니다!`, 'success');
+                    } else {
+                        showToast(data?.message || '장바구니 추가에 실패했습니다.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('오류가 발생했습니다.', 'error');
+                })
+                .finally(() => {
+                    // 로딩 상태 해제
+                    button.classList.remove('btn-loading');
+                    button.disabled = quantities[product] === 0;
+                    originalText.textContent = '장바구니에 추가';
+                });
+        } else {
+            showToast('수량을 선택해주세요!', 'error');
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = toast.querySelector('.toast-message');
+        const toastIcon = toast.querySelector('.toast-icon');
+
+        toastMessage.textContent = message;
+        toastIcon.textContent = type === 'success' ? '✓' : '✗';
+
+        toast.className = `toast ${type}`;
+
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+</script>
+</body>
+</html>

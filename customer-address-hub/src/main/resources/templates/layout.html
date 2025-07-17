@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE - 선물세트 주문">선물세트 주문</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <th:block layout:fragment="extraHead">
+        <!-- 각 페이지별 추가 head 내용 -->
+    </th:block>
+</head>
+<body>
+<!-- 고정 헤더 -->
+<header class="app-header">
+    <div class="header-left">
+        <img src="/images/logo.png" alt="Company Logo" class="logo"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="logo-fallback" style="display:none; font-size: 32px; color: var(--primary-orange);">🎁</span>
+        <div class="company-name">선물세트 주문</div>
+    </div>
+    <div class="header-right">
+        <!-- 필요시 추가 헤더 요소들 -->
+    </div>
+</header>
+
+<!-- 페이지 콘텐츠 -->
+<main layout:fragment="content">
+    <!-- 각 페이지의 내용이 여기에 들어감 -->
+</main>
+
+<!-- 공통 스크립트 -->
+<script layout:fragment="scripts">
+    <!-- 각 페이지별 추가 스크립트 -->
+</script>
+
+<!-- 공통 JavaScript -->
+<script>
+    // 전역 유틸리티 함수들
+    function showNotification(message, type = 'info') {
+        // 알림 표시 로직
+        console.log(`${type}: ${message}`);
+    }
+
+    // 페이지 로드 완료 시 실행
+    document.addEventListener('DOMContentLoaded', function() {
+        // 공통 초기화 로직
+        console.log('Page loaded successfully');
+
+        // 로고 이미지 오류 처리
+        const logos = document.querySelectorAll('.logo');
+        logos.forEach(logo => {
+            logo.addEventListener('error', function() {
+                this.style.display = 'none';
+                const fallback = this.nextElementSibling;
+                if (fallback && fallback.classList.contains('logo-fallback')) {
+                    fallback.style.display = 'inline';
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

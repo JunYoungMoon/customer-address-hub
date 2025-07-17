@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>장바구니</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <button class="back-btn" onclick="history.back()">←</button>
+        <h1 class="page-title">🛒 장바구니</h1>
+    </div>
+
+    <div class="content">
+        <div class="cart-items" th:if="${!cart.isEmpty()}">
+            <!-- 갈비 선물세트 -->
+            <div class="cart-item" th:if="${cart.galbiQuantity > 0}">
+                <div class="item-header">
+                    <img src="/images/product1.jpg" alt="갈비 선물세트" class="item-image"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="item-image-placeholder" style="display:none;">🥩</div>
+
+                    <div class="item-info">
+                        <div class="item-name">프리미엄 갈비 선물세트</div>
+                        <div class="item-description">최고급 한우 갈비로 만든 프리미엄 선물세트</div>
+                    </div>
+                </div>
+
+                <div class="quantity-controls">
+                    <span class="quantity-label">수량</span>
+                    <div class="quantity-selector">
+                        <button class="quantity-btn" onclick="updateQuantity('galbi', -1)">-</button>
+                        <span class="quantity-display" id="galbi-qty" th:text="${cart.galbiQuantity}">1</span>
+                        <button class="quantity-btn" onclick="updateQuantity('galbi', 1)">+</button>
+                    </div>
+                </div>
+
+                <button class="remove-btn" onclick="removeItem('galbi')">상품 삭제</button>
+            </div>
+
+            <!-- 스팸 선물세트 -->
+            <div class="cart-item" th:if="${cart.spamQuantity > 0}">
+                <div class="item-header">
+                    <img src="/images/product2.jpg" alt="스팸 선물세트" class="item-image"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="item-image-placeholder" style="display:none;">🥫</div>
+
+                    <div class="item-info">
+                        <div class="item-name">프리미엄 스팸 선물세트</div>
+                        <div class="item-description">정성스럽게 선별한 프리미엄 스팸 선물세트</div>
+                    </div>
+                </div>
+
+                <div class="quantity-controls">
+                    <span class="quantity-label">수량</span>
+                    <div class="quantity-selector">
+                        <button class="quantity-btn" onclick="updateQuantity('spam', -1)">-</button>
+                        <span class="quantity-display" id="spam-qty" th:text="${cart.spamQuantity}">1</span>
+                        <button class="quantity-btn" onclick="updateQuantity('spam', 1)">+</button>
+                    </div>
+                </div>
+
+                <button class="remove-btn" onclick="removeItem('spam')">상품 삭제</button>
+            </div>
+        </div>
+
+        <!-- 빈 장바구니 -->
+        <div class="empty-cart" th:if="${cart.isEmpty()}">
+            <div class="empty-cart-icon">🛒</div>
+            <h3>장바구니가 비어있습니다</h3>
+            <p>선물세트를 선택해보세요!</p>
+        </div>
+
+        <!-- 주문 요약 -->
+        <div class="summary" th:if="${!cart.isEmpty()}">
+            <div class="summary-title">📋 주문 요약</div>
+            <div class="summary-row" th:if="${cart.galbiQuantity > 0}">
+                <span>갈비 선물세트 × <span th:text="${cart.galbiQuantity}">1</span></span>
+                <span>선택됨</span>
+            </div>
+            <div class="summary-row" th:if="${cart.spamQuantity > 0}">
+                <span>스팸 선물세트 × <span th:text="${cart.spamQuantity}">1</span></span>
+                <span>선택됨</span>
+            </div>
+
+            <div class="summary-row summary-total">
+                <span>총 상품 수량</span>
+                <span id="total-items" th:text="${cart.galbiQuantity + cart.spamQuantity}">2</span>개
+            </div>
+        </div>
+    </div>
+
+    <div class="cart-footer">
+        <button class="continue-shopping" onclick="location.href='/products'">계속 쇼핑</button>
+        <button class="checkout-btn" th:disabled="${cart.isEmpty()}" onclick="proceedToCheckout()">
+            주문하기
+        </button>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+    // 서버에서 전달된 초기값으로 설정
+    let cartData = {
+        galbi: /*[[${cart != null ? cart.galbiQuantity : 0}]]*/ 0,
+        spam: /*[[${cart != null ? cart.spamQuantity : 0}]]*/ 0
+    };
+
+    console.log("초기 cartData:", cartData);
+
+    function updateQuantity(product, change) {
+        const currentQty = cartData[product];
+        const newQty = Math.max(0, Math.min(20, currentQty + change));
+
+        if (newQty !== currentQty) {
+            cartData[product] = newQty;
+            console.log("cartData 업데이트:", cartData);
+            updateDisplay();
+            updateServer();
+        }
+    }
+
+    function removeItem(product) {
+        if (confirm('이 상품을 삭제하시겠습니까?')) {
+            cartData[product] = 0;
+            console.log("상품 삭제 후 cartData:", cartData);
+            updateDisplay();
+            updateServer();
+            location.reload();
+        }
+    }
+
+    function updateDisplay() {
+        if (cartData.galbi > 0) {
+            const galbiQtyElement = document.getElementById('galbi-qty');
+            if (galbiQtyElement) galbiQtyElement.textContent = cartData.galbi;
+        }
+
+        if (cartData.spam > 0) {
+            const spamQtyElement = document.getElementById('spam-qty');
+            if (spamQtyElement) spamQtyElement.textContent = cartData.spam;
+        }
+
+        const totalItems = cartData.galbi + cartData.spam;
+        const totalElement = document.getElementById('total-items');
+        if (totalElement) totalElement.textContent = totalItems;
+    }
+
+    function updateServer() {
+        fetch('/cart/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cartData)
+        }).then(response => {
+            console.log("서버 업데이트 완료:", response.status);
+        }).catch(error => {
+            console.error("서버 업데이트 실패:", error);
+        });
+    }
+
+    function proceedToCheckout() {
+        console.log("=== 주문하기 클릭 ===");
+        console.log("현재 cartData:", cartData);
+
+        // cartData가 비어있으면 DOM에서 다시 읽어보기
+        if (cartData.galbi === 0 && cartData.spam === 0) {
+            console.log("cartData가 비어있음, DOM에서 재확인");
+
+            const galbiElement = document.getElementById('galbi-qty');
+            const spamElement = document.getElementById('spam-qty');
+
+            if (galbiElement) cartData.galbi = parseInt(galbiElement.textContent) || 0;
+            if (spamElement) cartData.spam = parseInt(spamElement.textContent) || 0;
+
+            console.log("DOM에서 다시 읽은 cartData:", cartData);
+        }
+
+        if (cartData.galbi > 0 || cartData.spam > 0) {
+            console.log("주문 진행!");
+            location.href = '/address';
+        } else {
+            console.log("장바구니가 비어있음");
+            alert("장바구니가 비어있습니다. 상품을 추가해주세요.");
+        }
+    }
+</script>
+</body>
+</html>

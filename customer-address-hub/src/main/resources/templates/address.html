@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>배송지 입력</title>
+    <th:block layout:fragment="extraHead">
+        <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    </th:block>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <button class="back-btn" onclick="history.back()">←</button>
+        <h1 class="page-title">🚚 배송지 입력</h1>
+    </div>
+
+    <div class="container">
+        <!-- 주문 요약 -->
+        <div class="order-summary">
+            <div class="summary-title">📦 주문 요약</div>
+
+            <div class="summary-row" th:if="${cart.galbiQuantity > 0}">
+                <span>갈비 선물세트 × <span th:text="${cart.galbiQuantity}">1</span></span>
+                <span>선택됨</span>
+            </div>
+
+            <div class="summary-row" th:if="${cart.spamQuantity > 0}">
+                <span>스팸 선물세트 × <span th:text="${cart.spamQuantity}">1</span></span>
+                <span>선택됨</span>
+            </div>
+
+            <div class="summary-row summary-total">
+                <span>총 상품 수량</span>
+                <span th:text="${cart.galbiQuantity + cart.spamQuantity}">2</span>개
+            </div>
+        </div>
+
+        <form th:action="@{/order/complete}" method="post" id="orderForm" th:object="${orderForm}">
+            <!-- 받는 사람 정보 -->
+            <div class="form-section">
+                <div class="section-title">👤 받는 사람 정보</div>
+
+                <div class="form-group">
+                    <label for="recipientName">받는 사람 <span class="required">*</span></label>
+                    <input type="text" id="recipientName" th:field="*{recipientName}" required
+                           placeholder="받는 분의 성함을 입력하세요">
+                </div>
+
+                <div class="form-group">
+                    <label for="recipientPhone">연락처 <span class="required">*</span></label>
+                    <input type="tel" id="recipientPhone" th:field="*{recipientPhone}" required
+                           placeholder="010-1234-5678" pattern="[0-9]{3}-[0-9]{4}-[0-9]{4}">
+                </div>
+            </div>
+
+            <!-- 배송지 정보 -->
+            <div class="form-section">
+                <div class="section-title">🏠 배송지 정보</div>
+
+                <div class="form-group">
+                    <label for="zipcode">우편번호 <span class="required">*</span></label>
+                    <div class="address-search">
+                        <input type="text" id="zipcode" th:field="*{zipcode}" class="address-input"
+                               readonly placeholder="우편번호" required>
+                        <button type="button" class="search-btn" onclick="searchAddress()">
+                            주소 검색
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">주소 <span class="required">*</span></label>
+                    <input type="text" id="address" th:field="*{address}" class="address-readonly"
+                           readonly placeholder="주소 검색을 클릭하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="detailAddress">상세주소 <span class="required">*</span></label>
+                    <input type="text" id="detailAddress" th:field="*{detailAddress}" required
+                           placeholder="동/호수, 건물명 등을 입력하세요">
+                </div>
+
+                <div class="form-group">
+                    <label for="deliveryMemo">배송 메모</label>
+                    <textarea id="deliveryMemo" th:field="*{deliveryMemo}"
+                              placeholder="배송 시 요청사항이 있으시면 입력하세요"></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="order-btn" id="submitBtn">
+                🎁 주문 완료하기
+            </button>
+        </form>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+    let formValid = false;
+
+    function searchAddress() {
+        new daum.Postcode({
+            oncomplete: function(data) {
+                document.getElementById('zipcode').value = data.zonecode;
+                document.getElementById('address').value = data.address;
+                document.getElementById('detailAddress').focus();
+                validateForm();
+            }
+        }).open();
+    }
+
+    function validateForm() {
+        const form = document.getElementById('orderForm');
+        const inputs = form.querySelectorAll('input[required]');
+        let allValid = true;
+
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                allValid = false;
+            }
+        });
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = !allValid;
+
+        // 스타일 직접 적용
+        if (allValid) {
+            submitBtn.style.backgroundColor = 'var(--primary-orange)';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.style.opacity = '1';
+        } else {
+            submitBtn.style.backgroundColor = '#d1d5db';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.opacity = '0.6';
+        }
+
+        console.log('Form valid:', allValid);
+    }
+
+    // 모든 input에 이벤트 리스너 추가
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('orderForm');
+        const inputs = form.querySelectorAll('input, textarea');
+
+        inputs.forEach(input => {
+            input.addEventListener('input', validateForm);
+            input.addEventListener('change', validateForm);
+        });
+
+        // 초기 검증
+        validateForm();
+    });
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        if (!confirm('주문을 완료하시겠습니까?')) {
+            e.preventDefault();
+        }
+    });
+</script>
+</body>
+</html>
